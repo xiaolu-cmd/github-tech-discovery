@@ -1,0 +1,27 @@
+name: GitHub 技术项目发现
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # 每 6 小时
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run discovery pipeline
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+        run: python main.py --once

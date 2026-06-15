@@ -1,0 +1,68 @@
+# GitHub 技术项目自动发现 — 配置文件
+
+# ============================================================
+# 网络代理配置（本地代理地址，留空则不使用代理）
+# ============================================================
+proxy:
+  # HTTP 代理地址（本地运行时使用，GitHub Actions 中留空）
+  http: "${HTTP_PROXY}"
+  https: "${HTTPS_PROXY}"
+
+# ============================================================
+# DeepSeek API 配置
+# ============================================================
+deepseek:
+  api_key: "${DEEPSEEK_API_KEY}"
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-chat"
+
+# ============================================================
+# GitHub 搜索配置
+# ============================================================
+github:
+  # GitHub Personal Access Token（可选，提高 API 频率限制）
+  token: "${GH_PAT}"
+  # 回溯天数，每次搜索 N 天内创建的新仓库
+  lookback_days: 1
+  # 每类关键词搜索返回的最大仓库数
+  per_category_limit: 12
+  # 搜索时按 stars 排序
+  sort: "stars"
+  order: "desc"
+
+# ============================================================
+# 技术方向定义（每类拆为多组子查询，每组 ≤5 个 OR 操作符）
+# ============================================================
+categories:
+  - name: "AI / 人工智能"
+    queries:
+      - "ai OR llm OR agent OR rag OR mcp"
+      - "machine-learning OR deep-learning OR transformer OR gpt OR diffusion"
+  - name: "网络安全"
+    queries:
+      - "security OR vulnerability OR pentest OR cve OR scanner"
+      - "exploit OR red-team OR blueteam OR ctf OR hacking-tool"
+  - name: "实用工具"
+    queries:
+      - "cli-tool OR dev-tool OR automation OR productivity OR efficiency"
+      - "self-hosted OR devops OR monitoring OR open-source-alternative OR developer-tools"
+
+# ============================================================
+# Webhook 配置（飞书 / 企业微信 / 钉钉 均支持）
+# ============================================================
+webhook:
+  # 类型: feishu / wecom / dingtalk / generic
+  type: "feishu"
+  # Webhook 完整 URL
+  url: "${FEISHU_WEBHOOK_URL}"
+  # 推送的最低评分阈值（1-5），低于此分数的项目不推送
+  min_score: 3
+
+# ============================================================
+# 调度配置
+# ============================================================
+scheduler:
+  # 运行间隔（小时）
+  interval_hours: 6
+  # 首次运行是否立即执行
+  run_immediately: true
