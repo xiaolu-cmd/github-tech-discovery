@@ -63,6 +63,6 @@ webhook:
 # ============================================================
 scheduler:
   # 运行间隔（小时）
-  interval_hours: 6
+  interval_hours: 24
   # 首次运行是否立即执行
   run_immediately: true
