@@ -146,6 +146,7 @@ def run(config):
     sort = config["github"].get("sort", "stars")
     order = config["github"].get("order", "desc")
     token = config["github"].get("token", "").strip() or None
+    min_stars = config["github"].get("min_stars", 0)
 
     proxy = config.get("proxy", {})
     proxy_url = proxy.get("https") or proxy.get("http") or None
@@ -155,12 +156,13 @@ def run(config):
     if proxy_url:
         print(f"[fetcher] 使用代理: {proxy_url}")
 
-    return asyncio.run(_async_run(queries, per_page, sort, order, token, proxy_url))
+    return asyncio.run(_async_run(queries, per_page, sort, order, token, proxy_url, min_stars))
 
 
-async def _async_run(queries, per_page, sort, order, token, proxy_url):
+async def _async_run(queries, per_page, sort, order, token, proxy_url, min_stars=0):
     seen_ids = {}
     results = []
+    skipped_low_stars = 0
     rl_tracker = RateLimitTracker(authenticated=bool(token))
 
     limits = httpx.Limits(max_connections=8, max_keepalive_connections=4)
@@ -191,12 +193,17 @@ async def _async_run(queries, per_page, sort, order, token, proxy_url):
                     seen_ids[rid]["category"] += f", {cat_name}"
                     continue
 
+                stars = repo["stargazers_count"]
+                if stars < min_stars:
+                    skipped_low_stars += 1
+                    continue
+
                 item = {
                     "id": rid,
                     "full_name": repo["full_name"],
                     "html_url": repo["html_url"],
                     "description": repo.get("description") or "",
-                    "stars": repo["stargazers_count"],
+                    "stars": stars,
                     "language": repo.get("language") or "Unknown",
                     "topics": repo.get("topics", []),
                     "created_at": repo["created_at"],
@@ -206,7 +213,7 @@ async def _async_run(queries, per_page, sort, order, token, proxy_url):
                 seen_ids[rid] = item
                 results.append(item)
 
-        print(f"[fetcher] 搜索完成，去重后 {len(results)} 个仓库")
+        print(f"[fetcher] 搜索完成，去重后 {len(results)} 个仓库（过滤低 stars: {skipped_low_stars}）")
 
         # Phase 2: Parallel README fetch (throttled by RateLimitTracker)
         if results:

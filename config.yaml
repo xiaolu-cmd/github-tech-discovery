@@ -23,9 +23,11 @@ github:
   # GitHub Personal Access Token（可选，提高 API 频率限制）
   token: "${GH_PAT}"
   # 回溯天数，每次搜索 N 天内创建的新仓库
-  lookback_days: 1
+  lookback_days: 7
   # 每类关键词搜索返回的最大仓库数
-  per_category_limit: 12
+  per_category_limit: 5
+  # 最低 stars 数，低于此数的仓库直接过滤
+  min_stars: 10
   # 搜索时按 stars 排序
   sort: "stars"
   order: "desc"
@@ -56,7 +58,7 @@ webhook:
   # Webhook 完整 URL
   url: "${FEISHU_WEBHOOK_URL}"
   # 推送的最低评分阈值（1-5），低于此分数的项目不推送
-  min_score: 3
+  min_score: 4
 
 # ============================================================
 # 调度配置

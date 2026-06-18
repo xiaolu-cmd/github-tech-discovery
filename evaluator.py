@@ -31,13 +31,14 @@ README 摘要（前 5000 字符）:
 请严格按以下 JSON 格式返回评估结果（不要返回其他内容）：
 {{"score": <1-5 整数>, "direction": "<AI / 人工智能 | 网络安全 | 实用工具>", "reason": "<一句话推荐理由，中文，不超过50字>"}}
 
-评分标准：
-- 5: 非常值得关注，在技术方向上具有创新性或高实用性
-- 4: 值得关注，项目质量不错，与方向相关
-- 3: 有一定关联，可以了解一下
-- 2: 关联度较低
+评分标准（Stars 数是重要参考，低 Stars 的项目通常不值得高分）：
+- 5: 非常值得关注，在技术方向上具有创新性或高实用性，通常 Stars ≥ 100
+- 4: 值得关注，项目质量不错，与方向相关，通常 Stars ≥ 30
+- 3: 有一定关联，可以了解一下，通常 Stars ≥ 10
+- 2: 关联度较低或 Stars 太少还不成熟
 - 1: 不相关或不值得关注
 
+注意：Stars 不是唯一标准，但对于 Stars < 10 的新项目，除非 README 展示了极强的创新性或实用性，否则不应给到 4 分以上。
 如果仓库信息太少（无描述且无 README），直接返回 score=1, direction="实用工具"。"""
 
 
@@ -134,7 +135,7 @@ def run(results, config):
                     item = future.result()
                 except (httpx.HTTPError, APIError, APITimeoutError, OSError) as e:
                     item = futures[future]
-                    item["score"] = 2
+                    item["score"] = 1
                     item["direction"] = "未知"
                     item["reason"] = f"评估网络错误: {str(e)[:40]}"
 
