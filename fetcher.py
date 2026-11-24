@@ -181,6 +181,12 @@ async def _async_run(queries, per_page, sort, order, token, proxy_url, min_stars
         ]
         all_repos_list = await asyncio.gather(*tasks, return_exceptions=True)
 
+        failures = [repos for repos in all_repos_list if isinstance(repos, Exception)]
+        if failures:
+            raise RuntimeError(
+                f"GitHub search failed for {len(failures)}/{len(queries)} queries: {failures[0]}"
+            ) from failures[0]
+
         for (cat_name, _), repos in zip(queries, all_repos_list):
             if isinstance(repos, Exception):
                 print(f"[fetcher] 搜索失败 [{cat_name}]: {repos}")
