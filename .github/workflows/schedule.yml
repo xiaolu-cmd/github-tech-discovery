@@ -2,7 +2,7 @@ name: GitHub Tech Discovery
 
 on:
   schedule:
-    - cron: "0 8 * * *" # 每天 UTC 8:00（北京时间 16:00）
+    - cron: "7 8 * * *" # 每天 UTC 8:07（北京时间 16:07）
   workflow_dispatch: # 允许手动触发
 
 permissions:
