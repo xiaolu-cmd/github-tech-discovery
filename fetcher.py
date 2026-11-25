@@ -8,6 +8,8 @@ from datetime import datetime, timedelta, timezone
 import httpx
 import yaml
 
+from language_policy import has_chinese_docs
+
 
 def build_queries(config):
     """Build search queries per category with date window."""
@@ -16,7 +18,7 @@ def build_queries(config):
 
     queries = []
     for cat in config["categories"]:
-        for q in cat["queries"]:
+        for q in cat["queries"] + cat.get("chinese_queries", []):
             full_q = f"{q} created:>{since}"
             queries.append((cat["name"], full_q))
     return queries
@@ -134,9 +136,38 @@ async def fetch_readme(full_name, client, token, rl_tracker):
     resp.raise_for_status()
     data = resp.json()
     content = data.get("content", "")
-    if content:
-        return base64.b64decode(content).decode("utf-8", errors="replace")
-    return None
+    default_readme = base64.b64decode(content).decode("utf-8", errors="replace") if content else None
+    if has_chinese_docs(default_readme):
+        return default_readme
+
+    # A project's default README can be English even when it provides Chinese docs.
+    chinese_names = {
+        "readme.zh-cn.md", "readme.zh.md", "readme.cn.md", "readme_zh.md",
+        "readme_zh-cn.md", "readme_cn.md", "readme.chinese.md", "readme-zh.md",
+        "readme-zh-cn.md", "readme.zh-tw.md", "readme_zh-tw.md",
+    }
+    try:
+        await rl_tracker.acquire_for_core()
+        listing = await client.get(f"https://api.github.com/repos/{full_name}/contents", headers=headers)
+        await rl_tracker.update(listing)
+        listing.raise_for_status()
+        entries = listing.json()
+        if not isinstance(entries, list):
+            return default_readme
+        for entry in entries:
+            if entry.get("type") != "file" or entry.get("name", "").lower() not in chinese_names:
+                continue
+            await rl_tracker.acquire_for_core()
+            translated = await client.get(
+                f"https://api.github.com/repos/{full_name}/contents/{entry['path']}", headers=headers)
+            await rl_tracker.update(translated)
+            translated.raise_for_status()
+            text = base64.b64decode(translated.json().get("content", "")).decode("utf-8", errors="replace")
+            if has_chinese_docs(text):
+                return text
+    except (httpx.HTTPError, ValueError) as error:
+        print(f"[fetcher] 中文 README 检查失败 [{full_name}]: {type(error).__name__}")
+    return default_readme
 
 
 def run(config):

@@ -6,7 +6,7 @@ from datetime import datetime
 import httpx
 
 
-def build_markdown(results, run_time):
+def build_markdown(results, run_time, language_stats=None):
     """Build a markdown message body from evaluation results."""
     lines = [
         f"## GitHub 技术项目速递",
@@ -14,6 +14,23 @@ def build_markdown(results, run_time):
         f"本次发现 {len(results)} 个值得关注的项目",
         "",
     ]
+
+    if language_stats is not None:
+        zh_count = sum(r.get("content_language") == "zh" for r in results)
+        en_count = sum(r.get("content_language") == "en" for r in results)
+        target = language_stats["ratio"]
+        lines.extend([
+            f"项目文档：中文 {zh_count} 个 / 英文 {en_count} 个",
+            f"目标比例：中文 {target:.0%} / 英文 {1 - target:.0%}（按数量取整，不设总数上限）",
+            "中文项目指提供可用中文文档的项目，含中英双语项目。",
+            "",
+        ])
+        if not results:
+            lines.extend([
+                f"本轮合格候选：中文 {language_stats['zh']} 个 / 英文 {language_stats['en']} 个。",
+                "候选不足，暂时无法组成接近目标比例的推荐；未用其他语言项目强行补位。",
+                "",
+            ])
 
     by_category = {}
     for r in results:
@@ -30,7 +47,8 @@ def build_markdown(results, run_time):
                 desc = desc[:57] + "..."
 
             lines.append(f"**[{r['full_name']}]({r['html_url']})**")
-            lines.append(f"🔥{r['score']}星 | ⭐{r['stars']} | {lang}")
+            doc_language = {"zh": "中文", "en": "英文"}.get(r.get("content_language"), "未确认")
+            lines.append(f"🔥{r['score']}星 | ⭐{r['stars']} | {lang} | 文档：{doc_language}")
             lines.append(f"> {desc}")
             lines.append(f"> 推荐理由: {r.get('reason', '无')}")
             lines.append("")
@@ -121,12 +139,12 @@ SENDERS = {
 }
 
 
-def run(results, config):
+def run(results, config, language_stats=None):
     """Push evaluation results to webhook.
 
     If webhook URL is placeholder, print results to console instead.
     """
-    if not results:
+    if not results and language_stats is None:
         print("[notifier] 没有通过评估的项目，跳过推送")
         return
 
@@ -134,7 +152,7 @@ def run(results, config):
     webhook_type = config["webhook"]["type"]
     run_time = datetime.now()
 
-    content = build_markdown(results, run_time)
+    content = build_markdown(results, run_time, language_stats)
 
     if "your-hook-id" in webhook_url or not webhook_url.strip():
         print("\n" + "=" * 60)

@@ -21,6 +21,7 @@ from apscheduler.events import EVENT_JOB_ERROR
 import fetcher
 import evaluator
 import notifier
+from language_policy import select_recommendations
 
 
 SEEN_FILE = "seen.json"
@@ -168,7 +169,17 @@ def run_pipeline():
         return False
 
     # Step 4: Notify
-    notifier.run(passed, config)
+    ratio = config.get("recommendations", {}).get("chinese_ratio", 0.7)
+    selected = select_recommendations(passed, ratio)
+    language_stats = {
+        "zh": sum(r.get("content_language") == "zh" for r in passed),
+        "en": sum(r.get("content_language") == "en" for r in passed),
+        "ratio": ratio,
+    }
+    selected_zh = sum(r["content_language"] == "zh" for r in selected)
+    print(f"[main] 语言配比：中文 {selected_zh} / 英文 {len(selected) - selected_zh}，"
+          f"合格候选中文 {language_stats['zh']} / 英文 {language_stats['en']}，无总数上限")
+    notifier.run(selected, config, language_stats)
 
     # Step 5: Update seen cache with all evaluated repos
     now_str = datetime.now(timezone.utc).isoformat()

@@ -37,14 +37,20 @@ github:
 # ============================================================
 categories:
   - name: "AI / 人工智能"
+    chinese_queries:
+      - "智能体 OR 大模型 OR 知识库 OR 人工智能"
     queries:
       - "ai OR llm OR agent OR rag OR mcp"
       - "machine-learning OR deep-learning OR transformer OR gpt OR diffusion"
   - name: "网络安全"
+    chinese_queries:
+      - "漏洞 OR 渗透 OR 扫描 OR 安全"
     queries:
       - "security OR vulnerability OR pentest OR cve OR scanner"
       - "exploit OR red-team OR blueteam OR ctf OR hacking-tool"
   - name: "实用工具"
+    chinese_queries:
+      - "工具 OR 效率 OR 自动化 OR 中文"
     queries:
       - "cli-tool OR dev-tool OR automation OR productivity OR efficiency"
       - "self-hosted OR devops OR monitoring OR open-source-alternative OR developer-tools"
@@ -59,6 +65,10 @@ webhook:
   url: "${FEISHU_WEBHOOK_URL}"
   # 推送的最低评分阈值（1-5），低于此分数的项目不推送
   min_score: 4
+
+# 根据项目文档语言控制推荐比例；不设推荐总数上限。
+recommendations:
+  chinese_ratio: 0.7
 
 # ============================================================
 # 调度配置
